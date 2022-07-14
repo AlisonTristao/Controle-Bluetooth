@@ -99,6 +99,9 @@ public class MainActivity extends AppCompatActivity {
             //(aqui da um erro q n sei o pq, eu suprimi e funcionou ok)
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBtIntent, REQ_BT);
+
+            //esconde o hide
+            hideSystemBars();
         }
 
         // -------- codigos dos botoes -------- //
@@ -138,7 +141,6 @@ public class MainActivity extends AppCompatActivity {
                 txtEsq.setText(Integer.toString(i));
             }
 
-            //codigo gerado automatico não sei pra q funciona
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
                 //quando clica na seekbar
