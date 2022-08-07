@@ -5,6 +5,7 @@ package com.example.controlebluetooth;
 * Email: AlisonTristao@hotmail.com
 * */
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.annotation.SuppressLint;
@@ -15,6 +16,7 @@ import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Message;
 import android.view.View;
 import android.widget.Button;
 import android.widget.SeekBar;
@@ -35,23 +37,28 @@ public class MainActivity extends AppCompatActivity {
     private TextView txtEsq;
     private SeekBar seekbarEsq;
     private SeekBar seekbarDir;
-    private int valores[] = new int[2];// guarda a velocidade de cada motor - esq 0 e dir 1
+    private int valores[] = new int[2];     // guarda a velocidade de cada motor - esq 0 e dir 1
 
     // variaveis para a conexão bluetoohth
-    BluetoothAdapter adapBT = null;// adaptador bluetooth
-    BluetoothDevice devBT = null; // dispositipo bluetooth
-    BluetoothSocket socBT = null; // entrada/canal bluetooth
-    public boolean con = false; // conectado ou nao
-    static String endMac = null; // endereço mac do dispositivo
+    BluetoothAdapter adapBT = null;         // adaptador bluetooth
+    BluetoothDevice devBT = null;           // dispositipo bluetooth
+    BluetoothSocket socBT = null;           // entrada/canal bluetooth
+    public boolean con = false;             // conectado ou nao
+    static String endMac = null;            // endereço mac do dispositivo
+
     /*maracutaia pra comunicação bt (todas os dispositivos devem ter esse UUID)
     cada dispositivo tem uma porta UUID diferente, então vai dar erro se tentar conectar com algo
     diferente (computador, tablet...)*/
     UUID uuid = UUID.fromString("00001101-0000-1000-8000-00805f9b34fb");
-    private Handler handler; // handler that gets info from Bluetooth service
+
+    // não usamos essas duas para o carrinho andar (apenas enviamos dados)
+    Handler manipulador = null;             // manipulador dos dados recebidos por bt
+    StringBuilder dadosRecebidosBT=         // salva os dados recebidos por bt
+                        new StringBuilder();
 
     // (cada request tem um int para sua identificação)
-    public static final int REQ_BT = 1; // requisição da ativação bt
-    public static final int REQ_CON = 2; // requisição para conexão bt
+    public static final int REQ_BT = 1;     // requisição da ativação bt
+    public static final int REQ_CON = 2;    // requisição para conexão bt
 
     public void iniciarComponentes(){
         // define os componentes que criamos como os elementos do xml
@@ -76,7 +83,7 @@ public class MainActivity extends AppCompatActivity {
         );
     }
 
-    @SuppressLint("MissingPermission")
+    @SuppressLint({"MissingPermission", "HandlerLeak"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -175,6 +182,49 @@ public class MainActivity extends AppCompatActivity {
                 seekbarDir.setProgress(0);//volta pra zero
             }
         });
+
+        /* deixei como comentario pq n testei
+
+        // fica monitorando sozinho quando recebe mensagem
+        manipulador = new Handler(){
+            @Override
+            public void handleMessage(@NonNull Message msg) {
+
+                // se a mensagem ser "message_read" = 0
+                if(msg.what == 0){
+                    // transforma em string
+                    String recebidos = (String) msg.obj;
+
+                    // junta os dados enquanto esta recebendo algo
+                    dadosRecebidosBT.append(recebidos);
+
+                    // envie os dados assim:
+                    // {dados}
+                    // para {} sabermos o final e inicios
+
+                    // quarda o index do ultimo caracter
+                    int fim = dadosRecebidosBT.indexOf("}");
+
+                    // se o final ser maior q 0 recebeu algo
+                    if(fim > 0){
+                        // agora comparamos o começo pra saber se o dados veio inteiro
+                        if(dadosRecebidosBT.charAt(0) == '{'){
+
+                            // entao nossos dados vao ser os dados totais -1 no comeco e -1 no final
+                            String dados = dadosRecebidosBT.substring(1, dadosRecebidosBT.length());
+
+
+                            // entao aqui sua informação chegou completa em dados
+
+                        }
+
+                        // limpa a variavel pro proximo loop
+                        dadosRecebidosBT.delete(0, fim);
+                    }
+                }
+            }
+        };
+        */
     }
 
     @SuppressLint("MissingPermission")
@@ -267,26 +317,33 @@ public class MainActivity extends AppCompatActivity {
             mmOutStream = tmpOut;
         }
 
-        // isso aqui é diferente (tem forma melhor de obter os dados)
-        /*public void run() {
-            mmBuffer = new byte[1024];
+        /*
+
+        deixei como comentario pq n testei
+
+        // recebe os dados do bt
+        // modificamos pq o metodo do google n detecta se a mensaagem veio quebrada
+        public void run() {
+            byte[] mmBuffer = new byte[1024];
             int numBytes; // bytes returned from read()
 
-            // Keep listening to the InputStream until an exception occurs.
             while (true) {
                 try {
                     // Read from the InputStream.
                     numBytes = mmInStream.read(mmBuffer);
-                    // Send the obtained bytes to the UI activity.
-                    Message readMsg = handler.obtainMessage(MessageConstants.MESSAGE_READ,
-                                                                        numBytes, -1, mmBuffer);
-                    readMsg.sendToTarget();
+
+                    // string do buffer recebido em butes
+                    String dadosBT = new String(mmBuffer, 0, numBytes);
+
+                    // isso aqui detecta a mensagem lida
+                    manipulador.obtainMessage(0, numBytes, -1, dadosBT).sendToTarget();
                 } catch (IOException e) {
-                    Log.d(TAG, "Input stream was disconnected", e);
+                    // acho q crash se der erro
                     break;
                 }
             }
-        }*/
+        }
+        */
 
         // enviar dados
         public void enviar(String texto) {
