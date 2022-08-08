@@ -362,9 +362,10 @@ public class MainActivity extends AppCompatActivity {
     public class th extends Thread{// função q vai executar em segundo plano
         public void run() {
             while (con == true){// enquanto a conexão estiver ativa
-                //manda os valores
-                MainActivity.conTh.enviar("[" + valores[0] + "," + valores[1] + "]");
                 try {
+                    //manda os valores
+                    MainActivity.conTh.enviar("[" + valores[0] + "," + valores[1] + "]");
+
                     // espera 100 milis segundos
                     sleep(100);
                 } catch (InterruptedException e) {
